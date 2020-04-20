@@ -97,9 +97,9 @@ const deploy = async function(region, repository) {
 
   var optionsStart = {
     method: 'POST',
-    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.id}/power`,
+    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.identifier}/power`,
     headers: {
-      'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
+      'Authorization': `Bearer ${process.env.PTERODACTYL_CLIENT_KEY}`,
       'Content-Type': 'application/json',
       'Accept': 'Application/vnd.pterodactyl.v1+json',
     },
@@ -108,7 +108,8 @@ const deploy = async function(region, repository) {
     },
     json: true,
   };
-  await rp(optionsStart);
+  const responseStart = await rp(optionsStart);
+  console.log(JSON.stringify(responseStart, null, 2));
 }
 
 // deploy('eu', 'server-skyblock-egg');
