@@ -39,7 +39,9 @@ app.post('/github', (req, res) => {
       console.log('There we go, pull request merged');
       console.log(req.body.pull_request.title);
       console.log(req.body.repository.name);
-      deploy('eu', req.body.repository.name);
+      if (req.body.repository.name === 'server-skyblock-egg') {
+        deploy('eu', req.body.repository.name);
+      }
       res.status(200).end();
     }
   }
@@ -75,7 +77,6 @@ const deploy = async function(region, repository) {
     json: true,
   };
   const response = await rp(options);
-  console.log(JSON.stringify(response, null, 2));
   const date = new Date();
   const dir = `/backup/${repository}/${date.toISOString()}`
   await fs.mkdirSync(dir);
@@ -91,8 +92,22 @@ const deploy = async function(region, repository) {
     },
     json: true,
   };
-  const responseReinstall = await rp(optionsReinstall);
-  console.log(JSON.stringify(responseReinstall, null, 2));
+  await rp(optionsReinstall);
+
+  var optionsStart = {
+    method: 'POST',
+    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.id}/power`,
+    headers: {
+      'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'Application/vnd.pterodactyl.v1+json',
+    },
+    body: {
+      signal: start,
+    },
+    json: true,
+  };
+  await rp(optionsStart);
 }
 
 // deploy('eu', 'server-skyblock-egg');
