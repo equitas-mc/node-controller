@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const {FeedEmitter} = require('rss-emitter-ts');
 const rp = require('request-promise');
 const { execSync } = require('child_process');
-const fs = require('fs');
+const fs = require('fs-extra')
 const fsPromises = fs.promises;
 const path = require('path');
 const os = require('os');
@@ -38,6 +38,8 @@ app.post('/github', (req, res) => {
     if (req.body.pull_request.merged) {
       console.log('There we go, pull request merged');
       console.log(req.body.pull_request.title);
+      console.log(req.body.repository.name);
+      deploy('eu', req.body.repository.name);
       res.status(200).end();
     }
   }
@@ -47,10 +49,10 @@ app.post('/github', (req, res) => {
   res.status(200).end();
 })
 
-// const server = app.listen(port, () => {
-//   console.log(`App listening at http://localhost:${port}`)
-// })
-// module.exports = server;
+const server = app.listen(port, () => {
+  console.log(`App listening at http://localhost:${port}`)
+})
+module.exports = server;
 
 const feeds = [
     { url: "https://github.com/cuberite/cuberite/commits/master.atom", refresh: 20000, ignoreFirst: true },
@@ -61,10 +63,10 @@ emitter.on("item:new", (item) => {
 });
 feeds.forEach((feed) => emitter.add(feed));
 
-const deploy = async function(repository) {
+const deploy = async function(region, repository) {
   var options = {
     method: 'GET',
-    uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${repository}`,
+    uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${region}:${repository}`,
     headers: {
       'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
       'Content-Type': 'application/json',
@@ -74,9 +76,26 @@ const deploy = async function(repository) {
   };
   const response = await rp(options);
   console.log(JSON.stringify(response, null, 2));
+  const date = new Date();
+  const dir = `/backup/${repository}/${date.toISOString()}`
+  await fs.mkdirSync(dir);
+  await fs.copySync(`/srv/daemon-data/${response.attributes.uuid}`, dir);
+
+  var optionsReinstall = {
+    method: 'POST',
+    uri: `https://greaper88.ddns.us:9907/api/application/servers/${response.attributes.id}/reinstall`,
+    headers: {
+      'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'Application/vnd.pterodactyl.v1+json',
+    },
+    json: true,
+  };
+  const responseReinstall = await rp(optionsReinstall);
+  console.log(JSON.stringify(responseReinstall, null, 2));
 }
 
-// deploy('eu-server-skyblock-egg');
+// deploy('eu', 'server-skyblock-egg');
 
 const build = async function() {
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));

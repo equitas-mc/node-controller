@@ -14,6 +14,7 @@ mkdir Release
 cd Release
 cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 make -j`nproc`
-tar --create --gzip --file=/home/tw/Downloads/cuberite.tar.gz *
+cd Server
+tar --create --gzip --dereference --file=/srv/www/cuberite.tar.gz .
 cd -
 rm -rf $1
