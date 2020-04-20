@@ -43,6 +43,7 @@ app.post('/github', (req, res) => {
         deploy('eu', req.body.repository.name);
       }
       res.status(200).end();
+      return;
     }
   }
   console.log(req.headers);
@@ -103,7 +104,7 @@ const deploy = async function(region, repository) {
       'Accept': 'Application/vnd.pterodactyl.v1+json',
     },
     body: {
-      signal: start,
+      signal: 'start',
     },
     json: true,
   };
