@@ -30,6 +30,26 @@ app.post('/github', (req, res) => {
     res.status(200).end();
     return;
   }
+  if (req.headers['x-github-event'] === 'fork') {
+    res.status(200).end();
+    return;
+  }
+  if (req.headers['x-github-event'] === 'repository') {
+    res.status(200).end();
+    return;
+  }
+  if (req.headers['x-github-event'] === 'create') {
+    res.status(200).end();
+    return;
+  }
+  if (req.headers['x-github-event'] === 'label') {
+    res.status(200).end();
+    return;
+  }
+  if (req.headers['x-github-event'] === 'pull_request_review') {
+    res.status(200).end();
+    return;
+  }
   if (req.headers['x-github-event'] === 'pull_request') {
     if (req.body.action !== 'closed') {
       res.status(200).end();
