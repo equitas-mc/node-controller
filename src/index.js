@@ -50,6 +50,14 @@ app.post('/github', (req, res) => {
     res.status(200).end();
     return;
   }
+  if (req.headers['x-github-event'] === 'star') {
+    res.status(200).end();
+    return;
+  }
+  if (req.headers['x-github-event'] === 'watch') {
+    res.status(200).end();
+    return;
+  }
   if (req.headers['x-github-event'] === 'pull_request') {
     if (req.body.action !== 'closed') {
       res.status(200).end();
@@ -86,6 +94,12 @@ emitter.on("item:new", (item) => {
 });
 feeds.forEach((feed) => emitter.add(feed));
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 const deploy = async function(region, repository) {
   var options = {
     method: 'GET',
@@ -115,9 +129,27 @@ const deploy = async function(region, repository) {
   };
   await rp(optionsReinstall);
 
+  for (i=0; i<1000; i++) {
+    var optionsStatus = {
+      method: 'GET',
+      uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${region}:${repository}`,
+      headers: {
+        'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'Application/vnd.pterodactyl.v1+json',
+      },
+      json: true,
+    };
+    const status = await rp(optionsStatus);
+    await sleep(5000);
+    if (status.attributes.container.installed) {
+      break;
+    }
+  }
+
   var optionsStart = {
     method: 'POST',
-    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.identifier}/power`,
+    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.identifier}/power/`,
     headers: {
       'Authorization': `Bearer ${process.env.PTERODACTYL_CLIENT_KEY}`,
       'Content-Type': 'application/json',
@@ -128,8 +160,28 @@ const deploy = async function(region, repository) {
     },
     json: true,
   };
-  const responseStart = await rp(optionsStart);
-  console.log(JSON.stringify(responseStart, null, 2));
+  for (i=0; i<1000; i++) {
+    try {
+      const responseStart = await rp(optionsStart);
+      break;
+    } catch (e) {
+      console.log(e);
+    }
+    await sleep(5000);
+  }
+
+  var discord = {
+    method: 'POST',
+    uri: process.env.DISCORD_EU_WEBHOOK,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: {
+      content: `Updated ${region}:${repository}`,
+    },
+    json: true,
+  };
+  const responseStart = await rp(discord);
 }
 
 // deploy('eu', 'server-skyblock-egg');
