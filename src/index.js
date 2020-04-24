@@ -102,20 +102,6 @@ function sleep(ms) {
 }
 
 const deploy = async function(region, repository) {
-  var discord = {
-    method: 'POST',
-    uri: process.env.DISCORD_EU_WEBHOOK,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: {
-      content: `Server will be updated ${region}:${repository}`,
-    },
-    json: true,
-  };
-  const responseStart = await rp(discord);
-
-
   var options = {
     method: 'GET',
     uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${region}:${repository}`,
@@ -127,6 +113,20 @@ const deploy = async function(region, repository) {
     json: true,
   };
   const response = await rp(options);
+
+  var discord = {
+    method: 'POST',
+    uri: process.env.DISCORD_EU_WEBHOOK,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: {
+      content: `\`${response.attributes.name} Server\` will be updated in 5 minutes`,
+    },
+    json: true,
+  };
+  const responseStart = await rp(discord);
+
   const date = new Date();
   const dir = `/backup/${repository}/${date.toISOString()}`
   await fs.mkdirSync(dir);
@@ -141,7 +141,7 @@ const deploy = async function(region, repository) {
       'Accept': 'Application/vnd.pterodactyl.v1+json',
     },
     body: {
-      command: 'Server will be restarted soonish',
+      command: 'say Server will be restarted soonish',
     },
     json: true,
   };
@@ -202,7 +202,7 @@ const deploy = async function(region, repository) {
   }
 }
 
-// deploy('eu', 'server-skyblock-egg');
+// deploy('eu', 'server-survival-egg');
 
 const build = async function() {
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));
