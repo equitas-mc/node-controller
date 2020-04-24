@@ -67,7 +67,7 @@ app.post('/github', (req, res) => {
       console.log('There we go, pull request merged');
       console.log(req.body.pull_request.title);
       console.log(req.body.repository.name);
-      if (req.body.repository.name === 'server-skyblock-egg') {
+      if (req.body.repository.name === 'server-skyblock-egg' || req.body.repository.name === 'server-survival-egg' ) {
         deploy('eu', req.body.repository.name);
       }
       res.status(200).end();
@@ -91,6 +91,7 @@ const feeds = [
 const emitter = new FeedEmitter();
 emitter.on("item:new", (item) => {
     console.log(`New item: (${item.link})\n${item.title}\n${item.description}\n\n`);
+    build();
 });
 feeds.forEach((feed) => emitter.add(feed));
 
@@ -101,6 +102,20 @@ function sleep(ms) {
 }
 
 const deploy = async function(region, repository) {
+  var discord = {
+    method: 'POST',
+    uri: process.env.DISCORD_EU_WEBHOOK,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: {
+      content: `Server will be updated ${region}:${repository}`,
+    },
+    json: true,
+  };
+  const responseStart = await rp(discord);
+
+
   var options = {
     method: 'GET',
     uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${region}:${repository}`,
@@ -116,6 +131,22 @@ const deploy = async function(region, repository) {
   const dir = `/backup/${repository}/${date.toISOString()}`
   await fs.mkdirSync(dir);
   await fs.copySync(`/srv/daemon-data/${response.attributes.uuid}`, dir);
+
+  var optionsInfoMessage = {
+    method: 'POST',
+    uri: `https://greaper88.ddns.us:9907/api/client/servers/${response.attributes.identifier}/command/`,
+    headers: {
+      'Authorization': `Bearer ${process.env.PTERODACTYL_CLIENT_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'Application/vnd.pterodactyl.v1+json',
+    },
+    body: {
+      command: 'Server will be restarted soonish',
+    },
+    json: true,
+  };
+  await rp(optionsInfoMessage);
+  await sleep(60000);
 
   var optionsReinstall = {
     method: 'POST',
@@ -169,19 +200,6 @@ const deploy = async function(region, repository) {
     }
     await sleep(5000);
   }
-
-  var discord = {
-    method: 'POST',
-    uri: process.env.DISCORD_EU_WEBHOOK,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: {
-      content: `Updated ${region}:${repository}`,
-    },
-    json: true,
-  };
-  const responseStart = await rp(discord);
 }
 
 // deploy('eu', 'server-skyblock-egg');
