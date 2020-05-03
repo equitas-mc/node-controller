@@ -91,7 +91,7 @@ const feeds = [
 const emitter = new FeedEmitter();
 emitter.on("item:new", (item) => {
     console.log(`New item: (${item.link})\n${item.title}\n${item.description}\n\n`);
-    build();
+    build(item.title);
 });
 feeds.forEach((feed) => emitter.add(feed));
 
@@ -204,7 +204,7 @@ const deploy = async function(region, repository) {
 
 // deploy('eu', 'server-survival-egg');
 
-const build = async function() {
+const build = async function(title) {
   var discord = {
     method: 'POST',
     uri: process.env.DISCORD_EU_WEBHOOK,
@@ -212,7 +212,7 @@ const build = async function() {
       'Content-Type': 'application/json',
     },
     body: {
-      content: `New commit on cuberite master, will start to build a new release`,
+      content: `New commit ${title} on cuberite master, will start to build a new release`,
     },
     json: true,
   };
