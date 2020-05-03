@@ -205,10 +205,24 @@ const deploy = async function(region, repository) {
 // deploy('eu', 'server-survival-egg');
 
 const build = async function() {
+  var discord = {
+    method: 'POST',
+    uri: process.env.DISCORD_EU_WEBHOOK,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: {
+      content: `New commit on cuberite master, will start to build a new release`,
+    },
+    json: true,
+  };
+  const responseStart = await rp(discord);
+
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));
   console.log(dir);
   const output = await execSync(`./build.sh ${dir}`);
   console.log(output.toString());
+  deploy('eu', 'server-survival-egg');
 }
 
 // build();
