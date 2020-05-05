@@ -23,6 +23,6 @@
     "fs-extra": "^9.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "rss-emitter-ts": "^0.4.4"
+    "rss-feed-emitter": "^3.1.2"
   }
 }

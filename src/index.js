@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser');
-const {FeedEmitter} = require('rss-emitter-ts');
+const RssFeedEmitter = require('rss-feed-emitter');
 const rp = require('request-promise');
 const { execSync } = require('child_process');
 const fs = require('fs-extra')
@@ -85,15 +85,16 @@ const server = app.listen(port, () => {
 })
 module.exports = server;
 
-const feeds = [
-    { url: "https://github.com/cuberite/cuberite/commits/master.atom", refresh: 20000, ignoreFirst: true },
-];
-const emitter = new FeedEmitter();
-emitter.on("item:new", (item) => {
-    console.log(`New item: (${item.link})\n${item.title}\n${item.description}\n\n`);
-    build(item.title);
+const feeder = new RssFeedEmitter({ skipFirstLoad: true });
+feeder.add({
+  url: 'https://github.com/cuberite/cuberite/commits/master.atom',
+  refresh: 20000
 });
-feeds.forEach((feed) => emitter.add(feed));
+
+feeder.on("new-item", (item) => {
+    build(`${item.meta.title} ${item.title}`);
+});
+
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -205,6 +206,7 @@ const deploy = async function(region, repository) {
 // deploy('eu', 'server-survival-egg');
 
 const build = async function(title) {
+  console.log(`${new Date()} ${title}`);
   var discord = {
     method: 'POST',
     uri: process.env.DISCORD_EU_WEBHOOK,
