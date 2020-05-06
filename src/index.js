@@ -8,6 +8,7 @@ const fsPromises = fs.promises;
 const path = require('path');
 const os = require('os');
 const {sendMessage: sendDiscordMessage} = require('./discord');
+const {getServerInfo} = require('./pterodactyl');
 
 const app = express()
 app.use(bodyParser.json());
@@ -93,7 +94,7 @@ feeder.add({
 });
 
 feeder.on('new-item', (item) => {
-    build(`${item.meta.title} ${item.title}`);
+    build(`${item.title}`);
 });
 
 feeder.on('error', (error) => {
@@ -107,17 +108,7 @@ function sleep(ms) {
 }
 
 const deploy = async function(region, repository) {
-  var options = {
-    method: 'GET',
-    uri: `https://greaper88.ddns.us:9907/api/application/servers/external/${region}:${repository}`,
-    headers: {
-      'Authorization': `Bearer ${process.env.PTERODACTYL_KEY}`,
-      'Content-Type': 'application/json',
-      'Accept': 'Application/vnd.pterodactyl.v1+json',
-    },
-    json: true,
-  };
-  const response = await rp(options);
+  const response = await getServerInfo(region, repository);
 
   await sendDiscordMessage(`\`${response.attributes.name} Server\` will be updated in 5 minutes`)
 
@@ -200,7 +191,7 @@ const deploy = async function(region, repository) {
 
 const build = async function(title) {
   console.log(`${new Date()} ${title}`);
-  await sendDiscordMessage(`New commit ${title} on cuberite master, will start to build a new release`)
+  await sendDiscordMessage(`New release incoming, newest commit on cuberite master: \`${title}\``)
 
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));
   console.log(dir);
