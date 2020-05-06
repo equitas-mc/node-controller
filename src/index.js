@@ -7,6 +7,7 @@ const fs = require('fs-extra')
 const fsPromises = fs.promises;
 const path = require('path');
 const os = require('os');
+const {sendMessage: sendDiscordMessage} = require('./discord');
 
 const app = express()
 app.use(bodyParser.json());
@@ -91,10 +92,13 @@ feeder.add({
   refresh: 20000
 });
 
-feeder.on("new-item", (item) => {
+feeder.on('new-item', (item) => {
     build(`${item.meta.title} ${item.title}`);
 });
 
+feeder.on('error', (error) => {
+  console.log(`RSS feeder error: ${error}`);
+});
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -115,18 +119,7 @@ const deploy = async function(region, repository) {
   };
   const response = await rp(options);
 
-  var discord = {
-    method: 'POST',
-    uri: process.env.DISCORD_EU_WEBHOOK,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: {
-      content: `\`${response.attributes.name} Server\` will be updated in 5 minutes`,
-    },
-    json: true,
-  };
-  const responseStart = await rp(discord);
+  await sendDiscordMessage(`\`${response.attributes.name} Server\` will be updated in 5 minutes`)
 
   const date = new Date();
   const dir = `/backup/${repository}/${date.toISOString()}`
@@ -207,18 +200,7 @@ const deploy = async function(region, repository) {
 
 const build = async function(title) {
   console.log(`${new Date()} ${title}`);
-  var discord = {
-    method: 'POST',
-    uri: process.env.DISCORD_EU_WEBHOOK,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: {
-      content: `New commit ${title} on cuberite master, will start to build a new release`,
-    },
-    json: true,
-  };
-  const responseStart = await rp(discord);
+  await sendDiscordMessage(`New commit ${title} on cuberite master, will start to build a new release`)
 
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));
   console.log(dir);
