@@ -1,3 +1,5 @@
+const rp = require('request-promise');
+
 async function sendMessage(message) {
   var discord = {
     method: 'POST',
