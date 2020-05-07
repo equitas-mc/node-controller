@@ -190,13 +190,14 @@ const deploy = async function(region, repository) {
 // deploy('eu', 'server-survival-egg');
 
 const build = async function(title) {
-  console.log(`${new Date()} ${title}`);
+  console.log(`${new Date()} build: ${title}`);
   await sendDiscordMessage(`New release incoming, newest commit on cuberite master: \`${title}\``)
 
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'build-'));
-  console.log(dir);
+  // console.log(dir);
   const output = await execSync(`./build.sh ${dir}`);
-  console.log(output.toString());
+  fs.removeSync(dir);
+  // console.log(output.toString());
   deploy('eu', 'server-survival-egg');
 }
 
